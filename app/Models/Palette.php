@@ -14,6 +14,14 @@ class Palette extends Model
         'hex_colors' => 'array',
     ];
 
+    protected $fillable = [
+        'name',
+        'hex_colors',
+        'public',
+        'votes',
+        'user_id',
+    ];
+
     protected $hidden = [
         'created_at',
         'updated_at',
