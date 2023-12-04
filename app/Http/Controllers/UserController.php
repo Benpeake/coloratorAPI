@@ -10,24 +10,73 @@ use Illuminate\Support\Facades\Hash;
 class UserController extends Controller
 {
     //REGISTER USER
-    public function register(Request $request)
+    public function registerUser(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:20',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
         ]);
-
+    
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
+    
+        if ($user) {
+            return response()->json([
+                'message' => 'User registered successful',
+            ]);
+        } 
 
         return response()->json([
-            'message' => 'User registered successfully',
-        ]);
+            'message' => 'User registration failed',
+        ]); 
     }
 
+    //UPDATE USER DETAILS
+    public function updateUser(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'name' => 'string|max:20',
+            'email' => 'email|unique:users,email,' . $user->id,
+            'password' => 'string|min:6',
+        ]);
+
+        $updated = $user->update([
+            'name' => $request->input('name', $user->name),
+            'email' => $request->input('email', $user->email),
+            'password' => $request->has('password') ? Hash::make($request->password) : $user->password,
+        ]);
     
+        if ($updated) {
+            return response()->json([
+                'message' => 'User updated successful',
+            ]);
+        }
+    
+        return response()->json([
+            'message' => 'User update failed',
+        ]);
+    }
+    
+    //SOFT DELETE USER (and their palettes)
+    public function softDeleteUser(Request $request)
+    {
+        $user = Auth::user();
+
+        $user->palettes()->delete();
+        if($user->delete()){
+            return response()->json([
+                'message' => 'User deleted successfully',
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'error',
+        ]);
+    }
 }

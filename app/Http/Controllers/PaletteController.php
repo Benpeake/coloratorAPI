@@ -67,8 +67,8 @@ class PaletteController extends Controller
         ]);
     }
 
-    // GET ALL A SINGLE USERS PALETTES
-    public function getAllUsersPalettes(Request $request, int $user_id)
+    // GET A SINGLE USERS PALETTES
+    public function getAllPalettesByUserID(Request $request, int $user_id)
     {
         $search = $request->search;
         $userPalettes = Palette::where('user_id', $user_id);
@@ -97,7 +97,7 @@ class PaletteController extends Controller
                 $palette_toEdit->votes++;
 
                 if ($palette_toEdit->save()) {
-                    // Mark the palette as voted in the session
+                    // Marking the palette as voted in the session
                     $request->session()->put("voted_palettes.$palette_id", true);
 
                     return response()->json([
@@ -121,8 +121,8 @@ class PaletteController extends Controller
     }
 
 
-    //SOFT DELETE
-    public function softDelete(int $palette_id)
+    //SOFT DELETE PALETTE
+    public function softDeletePalette(int $palette_id)
     {
         $palette_toDelete = Palette::find($palette_id);
 
