@@ -10,5 +10,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::post('/palettes', [PaletteController::class, 'addPalette']);
 Route::get('/palettes', [PaletteController::class, 'getAllPalletes']);
-Route::put('/palettes/edit/{id}', [PaletteController::class, 'editPalleteById']);
-Route::put('/palettes/delete/{id}', [PaletteController::class, 'softDelete']);
+Route::get('/palettes/{user_id}', [PaletteController::class, ' getAllUsersPalettes']);
+Route::put('/palettes/vote/{palette_id}', [PaletteController::class, 'addVoteToPalette']);
+Route::put('/palettes/delete/{palette_id}', [PaletteController::class, 'softDelete']);
