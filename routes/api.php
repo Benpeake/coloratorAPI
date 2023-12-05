@@ -22,4 +22,3 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 Route::get('/palettes/all', [PaletteController::class, 'getAllPalettes']);
 Route::delete('/palettes/delete/{palette_id}', [PaletteController::class, 'softDeletePalette']);
-

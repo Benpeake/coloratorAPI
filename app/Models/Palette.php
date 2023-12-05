@@ -34,6 +34,7 @@ class Palette extends Model
     {
         return $this->belongsTo(User::class);
     }
+
     public function likers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'user_palette')->withTimestamps();

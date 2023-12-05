@@ -110,15 +110,15 @@ class PaletteTest extends TestCase
     public function test_getAllUsersPalettes_success(): void
     {
         $user = User::factory()->create();
-        
+
         // Authenticate the user
         $this->actingAs($user);
-    
+
         Palette::factory(['user_id' => $user->id, 'name' => 'Palette 1'])->create();
         Palette::factory(['user_id' => $user->id, 'name' => 'Palette 2'])->create();
-    
-        $response = $this->getJson("/api/palettes");
-    
+
+        $response = $this->getJson('/api/palettes');
+
         $response->assertStatus(200)
             ->assertJson(function (AssertableJson $json) {
                 $json->hasAll(['data', 'message'])
@@ -134,29 +134,28 @@ class PaletteTest extends TestCase
                     });
             });
     }
-    
 
-    public function test_getAllUsersPalettesWhenNotAuthenticated(): void
+    public function test_getAllUsersPalettes_Unauthenticated(): void
     {
         $response = $this->getJson('/api/palettes');
-    
+
         $response->assertStatus(401)
             ->assertJson([
                 'message' => 'Unauthenticated.',
             ]);
-    }    
+    }
 
     public function test_getAllUsersPalettesWithSearch(): void
     {
         $user = User::factory()->create();
         Palette::factory(['user_id' => $user->id, 'name' => 'Palette1'])->create();
         Palette::factory(['user_id' => $user->id, 'name' => 'Palette2'])->create();
-    
+
         // Authenticate the user
         $this->actingAs($user);
-    
-        $response = $this->getJson("/api/palettes?search=Palette1");
-    
+
+        $response = $this->getJson('/api/palettes?search=Palette1');
+
         $response->assertStatus(200)
             ->assertJson(function (AssertableJson $json) {
                 $json->hasAll(['data', 'message'])
@@ -180,9 +179,9 @@ class PaletteTest extends TestCase
         $palette = Palette::factory(['name' => 'Palette1'])->create();
         $user->likedPalettes()->attach($palette);
         $this->actingAs($user);
-    
-        $response = $this->getJson("/api/palettes/liked");
-    
+
+        $response = $this->getJson('/api/palettes/liked');
+
         $response->assertStatus(200)
             ->assertJson(function (AssertableJson $json) use ($palette) {
                 $json->hasAll(['data', 'message'])
@@ -195,7 +194,7 @@ class PaletteTest extends TestCase
                             'likes' => 'integer',
                             'user_id' => 'integer',
                         ])
-                        ->where('name', $palette->name);
+                            ->where('name', $palette->name);
                     });
             });
     }
@@ -251,12 +250,12 @@ class PaletteTest extends TestCase
     {
         $palette = Palette::factory()->create();
         $response = $this->deleteJson('api/palettes/delete/'.$palette->id);
-    
+
         $response->assertStatus(200)
-            ->assertJson(function (AssertableJson $json) {
-                $json->hasAll('message');
-            });
-    
+            ->assertJson([
+                'message' => 'Palette '.$palette->id.' removed',
+            ]);
+
         $this->assertSoftDeleted('palettes', [
             'id' => $palette->id,
         ]);
@@ -265,13 +264,13 @@ class PaletteTest extends TestCase
     public function test_softDeletePalette_invalidID(): void
     {
         $response = $this->deleteJson('api/palettes/delete/999');
-    
+
         $response->assertStatus(500)
             ->assertJson([
                 'message' => 'error',
             ]);
     }
-    
+
     public function testAddLikeToPalette()
     {
         $user = User::factory()->create();
@@ -291,20 +290,18 @@ class PaletteTest extends TestCase
     public function testAddLikeToPalette_alreadyLiked()
     {
         $user = User::factory()->create();
-        $palette = Palette::factory()->create(['likes' => 1]); 
-        $user->likedPalettes()->attach($palette->id); 
-    
+        $palette = Palette::factory()->create(['likes' => 1]);
+        $user->likedPalettes()->attach($palette->id);
+
         $this->actingAs($user);
         $response = $this->put("api/palettes/like/{$palette->id}");
-    
+
         $response->assertStatus(409)
             ->assertJson([
                 'message' => 'You have already liked this palette',
             ]);
-    
-        $this->assertEquals(1, $palette->fresh()->likes); 
+
+        $this->assertEquals(1, $palette->fresh()->likes);
         $this->assertTrue($user->likedPalettes->contains($palette));
     }
-    
-    
 }
