@@ -10,8 +10,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 //PALETTE ROUTES
-Route::post('/palettes', [PaletteController::class, 'addPalette']);
-Route::get('/palettes', [PaletteController::class, 'getAllPalletes']);
+Route::middleware('auth:sanctum')->post('/palettes', [PaletteController::class, 'addPalette']);
+Route::get('/palettes', [PaletteController::class, 'getAllPalettes']);
 Route::get('/palettes/{user_id}', [PaletteController::class, 'getAllPalettesByUserID']);
 Route::put('/palettes/vote/{palette_id}', [PaletteController::class, 'addVoteToPalette']);
 Route::delete('/palettes/delete/{palette_id}', [PaletteController::class, 'softDeletePalette']);

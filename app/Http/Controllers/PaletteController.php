@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Palette;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 
 class PaletteController extends Controller
 {
@@ -16,30 +17,25 @@ class PaletteController extends Controller
             'hex_colors' => ['required', 'array', 'between:2,5'],
             'public' => 'sometimes|boolean',
         ]);
-
+    
         $user = Auth::user();
         $newPalette = new Palette();
         $newPalette->name = $request->name;
         $newPalette->hex_colors = $request->hex_colors;
-        $newPalette->public = true;
+        $newPalette->public = true; 
         $newPalette->votes = 0;
-
+    
         if ($request->has('public')) {
             $newPalette->public = $request->input('public');
         }
-
-        $newPalette->user()->associate($user);
-
-        if ($newPalette->save()) {
-            return response()->json([
-                'message' => 'Palette added',
-            ]);
-        }
-
+    
+        $user->palettes()->save($newPalette);
+    
         return response()->json([
-            'message' => 'Palette not added',
+            'message' => 'Palette added',
         ]);
     }
+    
 
     // GET ALL PALETTES
     public function getAllPalettes(Request $request)
@@ -70,6 +66,14 @@ class PaletteController extends Controller
     // GET A SINGLE USERS PALETTES
     public function getAllPalettesByUserID(Request $request, int $user_id)
     {
+        $user = User::find($user_id);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Invalid user ID',
+            ], 404);
+        }
+    
         $search = $request->search;
         $userPalettes = Palette::where('user_id', $user_id);
 
@@ -90,7 +94,7 @@ class PaletteController extends Controller
     {
         $hasVoted = $request->session()->get("voted_palettes.$palette_id", false);
 
-        if (!$hasVoted) {
+        if (! $hasVoted) {
             $palette_toEdit = Palette::find($palette_id);
 
             if ($palette_toEdit) {
@@ -119,7 +123,6 @@ class PaletteController extends Controller
             'message' => 'Already voted for this palette',
         ]);
     }
-
 
     //SOFT DELETE PALETTE
     public function softDeletePalette(int $palette_id)
