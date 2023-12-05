@@ -4,8 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Palette extends Model
 {
@@ -19,7 +20,7 @@ class Palette extends Model
         'name',
         'hex_colors',
         'public',
-        'votes',
+        'likes',
         'user_id',
     ];
 
@@ -32,5 +33,9 @@ class Palette extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+    public function likers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'user_palette')->withTimestamps();
     }
 }

@@ -4,11 +4,12 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -33,5 +34,10 @@ class User extends Authenticatable
     public function palettes(): HasMany
     {
         return $this->hasMany(Palette::class);
+    }
+
+    public function likedPalettes(): BelongsToMany
+    {
+        return $this->belongsToMany(Palette::class, 'user_palette')->withTimestamps();
     }
 }

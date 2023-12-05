@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Palette;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
 
 class PaletteController extends Controller
 {
@@ -16,42 +16,56 @@ class PaletteController extends Controller
             'name' => 'required|string|max:14',
             'hex_colors' => ['required', 'array', 'between:2,5'],
             'public' => 'sometimes|boolean',
+            'user_id' => 'required|integer|exists:users,id', 
         ]);
     
         $user = Auth::user();
         $newPalette = new Palette();
         $newPalette->name = $request->name;
         $newPalette->hex_colors = $request->hex_colors;
-        $newPalette->public = true; 
-        $newPalette->votes = 0;
+        $newPalette->public = true;
+        $newPalette->likes = 0;
     
         if ($request->has('public')) {
             $newPalette->public = $request->input('public');
         }
     
-        $user->palettes()->save($newPalette);
+        if ($user->palettes()->save($newPalette)) {
+            return response()->json([
+                'message' => 'Palette added',
+            ], 201);
+        }
     
         return response()->json([
-            'message' => 'Palette added',
-        ]);
+            'message' => 'Palette not added, invalid data',
+        ], 422);
     }
     
 
     // GET ALL PALETTES
     public function getAllPalettes(Request $request)
     {
+
+        $request->validate([
+            'search' => 'string|max:500',
+            'order_by' => 'string|in:most_likes',
+        ]);
+
         $search = $request->search;
         $orderBy = $request->order_by;
 
-        $palettes = Palette::where(function ($query) use ($search) {
-            $query->where('name', 'LIKE', '%'.$search.'%');
-        });
+        $palettes = Palette::query();
 
-        // Order by most voted or newest
-        if ($orderBy === 'most_voted') {
-            $palettes->orderBy('votes', 'desc');
+        if($search) {
+            $palettes->where(function ($query) use ($search) {
+                $query->where('name', 'LIKE', '%' . $search . '%')
+                    ->orWhereJsonContains('hex_colors', $search);
+            });
+        }
+
+        if ($orderBy === 'most_likes') {
+            $palettes->orderBy('likes', 'desc');
         } else {
-            // Default to ordering by newest
             $palettes->latest();
         }
 
@@ -60,83 +74,129 @@ class PaletteController extends Controller
         return response()->json([
             'data' => $palettes,
             'message' => 'Palettes successfully retrieved',
-        ]);
+        ], 200);
     }
 
-    // GET A SINGLE USERS PALETTES
-    public function getAllPalettesByUserID(Request $request, int $user_id)
+    //GET A SINGLE USERS PALETTES
+    public function getAllPalettesByAuthUser(Request $request)
     {
-        $user = User::find($user_id);
-
+        $user = Auth::user();
+    
         if (!$user) {
             return response()->json([
-                'message' => 'Invalid user ID',
-            ], 404);
+                'message' => 'User not authenticated',
+            ], 401);
         }
     
         $search = $request->search;
-        $userPalettes = Palette::where('user_id', $user_id);
-
+        $userPalettes = Palette::where('user_id', $user->id);
+    
         if ($search) {
-            $userPalettes->where('name', 'LIKE', '%'.$search.'%');
+            $userPalettes->where(function ($query) use ($search) {
+                $query->where('name', 'LIKE', '%' . $search . '%')
+                    ->orWhereJsonContains('hex_colors', $search);
+            });
         }
-
+    
         $userPalettes = $userPalettes->latest()->get();
-
+    
         return response()->json([
-            'data' => $userPalettes,
+            'data'    => $userPalettes,
             'message' => 'Palettes successfully retrieved',
-        ]);
+        ], 200);
     }
 
-    // ADD VOTE TO PALETTE
-    public function addVoteToPalette(Request $request, int $palette_id)
+
+    //GET A USERS LIKED PALETTES
+    public function getLikedPalettes(Request $request)
     {
-        $hasVoted = $request->session()->get("voted_palettes.$palette_id", false);
+        $user = Auth::user();
+    
+        if (!$user) {
+            return response()->json([
+                'message' => 'Unauthorized. Invalid user.',
+            ], 401);
+        }
+    
+        $search = $request->search;
+        $likedPalettes = $user->likedPalettes();
+    
+        if ($search) {
+            $likedPalettes->where('name', 'LIKE', '%' . $search . '%')
+            ->orWhereJsonContains('hex_colors', $search);
+        }
+    
+        $likedPalettes = $likedPalettes->latest()->get();
+        $likedPalettes = $likedPalettes->map(function ($palette) {
+            unset($palette->pivot);
+            return $palette;
+        });
+    
+        return response()->json([
+            'data' => $likedPalettes,
+            'message' => 'Liked palettes successfully retrieved',
+        ], 200);
+    }
+    
 
-        if (! $hasVoted) {
+    // ADD LIKE TO PALETTE
+    public function addLikeToPalette(Request $request, int $palette_id)
+    {
+        $user = Auth::user();
+    
+        if (!$user) {
+            return response()->json([
+                'message' => 'Unauthorized. Invalid user.',
+            ], 401);
+        }
+    
+        $hasLiked = $user->likedPalettes()->where('palette_id', $palette_id)->exists();
+    
+        if (!$hasLiked) {
             $palette_toEdit = Palette::find($palette_id);
-
+    
             if ($palette_toEdit) {
-                $palette_toEdit->votes++;
-
+                $palette_toEdit->likes++;
+    
                 if ($palette_toEdit->save()) {
-                    // Marking the palette as voted in the session
-                    $request->session()->put("voted_palettes.$palette_id", true);
-
+                    // Attach the palette to the user's liked palettes
+                    $user->likedPalettes()->attach($palette_id);
+    
                     return response()->json([
                         'message' => 'Palette successfully updated',
-                    ]);
+                    ],200);
                 }
-
+    
                 return response()->json([
                     'message' => 'Palette update not successful',
-                ]);
+                ], 422);
             }
-
+    
             return response()->json([
                 'message' => 'Invalid palette ID',
-            ]);
+            ], 401);
         }
-
+    
         return response()->json([
-            'message' => 'Already voted for this palette',
-        ]);
+            'message' => 'You have already liked this palette',
+        ], 409);
     }
 
     //SOFT DELETE PALETTE
     public function softDeletePalette(int $palette_id)
     {
         $palette_toDelete = Palette::find($palette_id);
-
-        if ($palette_toDelete->delete()) {
-            return response()->json([
-                'message' => "Palette $palette_id removed",
-            ]);
+    
+        if ($palette_toDelete) {
+            if ($palette_toDelete->delete()) {
+                return response()->json([
+                    'message' => "Palette $palette_id removed",
+                ], 200);
+            }
         }
-
         return response()->json([
             'message' => 'error',
-        ]);
+        ], 500);
     }
+    
 }

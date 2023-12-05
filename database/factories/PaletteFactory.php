@@ -18,7 +18,7 @@ class PaletteFactory extends Factory
                 $this->faker->hexColor,
             ],
             'public' => $this->faker->boolean,
-            'votes' => $this->faker->numberBetween(0, 100),
+            'likes' => $this->faker->numberBetween(0, 100),
             'user_id' => User::factory(),
         ];
 
