@@ -238,7 +238,7 @@ class PaletteController extends Controller
         if ($palette_toEdit->public == 0) {
             return response()->json([
                 'message' => 'Palette is already private',
-            ], 400);
+            ], 409);
         } elseif ($palette_toEdit->public == 1) {
             $palette_toEdit->public = 0;
         }
@@ -276,7 +276,7 @@ class PaletteController extends Controller
         if ($palette_toEdit->public == 1) {
             return response()->json([
                 'message' => 'Palette is already public',
-            ], 400);
+            ], 409);
         } elseif ($palette_toEdit->public == 0) {
             $palette_toEdit->public = 1;
         }
@@ -291,5 +291,4 @@ class PaletteController extends Controller
             'message' => 'Error saving palette status',
         ], 500);
     }
-
 }

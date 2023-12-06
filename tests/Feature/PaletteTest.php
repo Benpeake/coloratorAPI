@@ -324,4 +324,124 @@ class PaletteTest extends TestCase
         $this->assertEquals(1, $palette->fresh()->likes);
         $this->assertTrue($user->likedPalettes->contains($palette));
     }
+
+    public function test_SetPaletteToPrivate()
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $palette = Palette::factory()->create(['public' => 1, 'user_id' => $user->id]);
+
+        $response = $this->putJson("api/palettes/status/private/{$palette->id}");
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'message' => "Palette $palette->id set to private",
+            ]);
+
+        $this->assertDatabaseHas('palettes', [
+            'id' => $palette->id,
+            'public' => 0,
+        ]);
+    }
+
+    public function test_SetPaletteToPrivate_alreadyPrivate()
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $palette = Palette::factory()->create(['public' => 0, 'user_id' => $user->id]);
+
+        $response = $this->putJson("api/palettes/status/private/{$palette->id}");
+
+        $response->assertStatus(409)
+            ->assertJson([
+                'message' => 'Palette is already private',
+            ]);
+
+        $this->assertDatabaseHas('palettes', [
+            'id' => $palette->id,
+            'public' => 0,
+        ]);
+    }
+
+    public function test_SetPaletteToPrivate_unauthenticated()
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $palette = Palette::factory()->create(['public' => 1]);
+
+        $response = $this->putJson("api/palettes/status/private/{$palette->id}");
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'message' => 'Unauthorized. You do not have permission to edit this palette.',
+            ]);
+
+        $this->assertDatabaseHas('palettes', [
+            'id' => $palette->id,
+            'public' => 1,
+        ]);
+    }
+
+    public function test_SetPaletteToPublic()
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $palette = Palette::factory()->create(['public' => 0, 'user_id' => $user->id]);
+
+        $response = $this->putJson("api/palettes/status/public/{$palette->id}");
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'message' => "Palette $palette->id set to public",
+            ]);
+
+        $this->assertDatabaseHas('palettes', [
+            'id' => $palette->id,
+            'public' => 1,
+        ]);
+    }
+
+    public function test_SetPaletteToPublic_alreadyPublic()
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $palette = Palette::factory()->create(['public' => 1, 'user_id' => $user->id]);
+
+        $response = $this->putJson("api/palettes/status/public/{$palette->id}");
+
+        $response->assertStatus(409)
+            ->assertJson([
+                'message' => 'Palette is already public',
+            ]);
+
+        $this->assertDatabaseHas('palettes', [
+            'id' => $palette->id,
+            'public' => 1,
+        ]);
+    }
+
+    public function test_SetPaletteToPublic_unauthenticated()
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $palette = Palette::factory()->create(['public' => 0]);
+
+        $response = $this->putJson("api/palettes/status/private/{$palette->id}");
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'message' => 'Unauthorized. You do not have permission to edit this palette.',
+            ]);
+
+        $this->assertDatabaseHas('palettes', [
+            'id' => $palette->id,
+            'public' => 0,
+        ]);
+    }
 }

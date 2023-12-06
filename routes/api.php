@@ -20,5 +20,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/palettes', [PaletteController::class, 'getAllPalettesByAuthUser']);
     Route::get('/palettes/liked', [PaletteController::class, 'getLikedPalettes']);
     Route::delete('/palettes/delete/{palette_id}', [PaletteController::class, 'softDeletePalette']);
+    Route::put('/palettes/status/private/{palette_id}', [PaletteController::class, 'setPaletteToPrivate']);
+    Route::put('/palettes/status/public/{palette_id}', [PaletteController::class, 'setPaletteToPublic']);
 });
 Route::get('/palettes/all', [PaletteController::class, 'getAllPalettes']);
