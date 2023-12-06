@@ -180,21 +180,44 @@ class PaletteController extends Controller
         ], 409);
     }
 
-    //SOFT DELETE PALETTE
+    // SOFT DELETE PALETTE
     public function softDeletePalette(int $palette_id)
     {
-        $palette_toDelete = Palette::find($palette_id);
+        $user = Auth::user();
 
-        if ($palette_toDelete) {
-            if ($palette_toDelete->delete()) {
-                return response()->json([
-                    'message' => "Palette $palette_id removed",
-                ], 200);
-            }
+        if (! $user) {
+            return response()->json([
+                'message' => 'Unauthorized. Invalid user.',
+            ], 401);
+        }
+
+        $paletteToDelete = Palette::find($palette_id);
+
+        if (! $paletteToDelete) {
+            return response()->json([
+                'message' => 'Palette not found',
+            ], 404);
+        }
+
+        if ($paletteToDelete->user_id !== $user->id) {
+            return response()->json([
+                'message' => 'Unauthorized. You do not have permission to delete this palette.',
+            ], 403);
+        }
+
+        if ($paletteToDelete->delete()) {
+            return response()->json([
+                'message' => "Palette $palette_id removed",
+            ], 200);
         }
 
         return response()->json([
-            'message' => 'error',
+            'message' => 'Error deleting palette',
         ], 500);
     }
+
+    //MAKE PALETTE PRIVATE
+
+    //MAKE PALETTE PUBLIC 
+
 }

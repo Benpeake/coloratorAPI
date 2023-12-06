@@ -246,9 +246,11 @@ class PaletteTest extends TestCase
             ]);
     }
 
-    public function test_softDeletePalette(): void
+    public function test_softDeletePalette_success(): void
     {
-        $palette = Palette::factory()->create();
+        $user = User::factory()->create();
+        $palette = Palette::factory(['user_id' => $user->id])->create();
+        $this->actingAs($user);
         $response = $this->deleteJson('api/palettes/delete/'.$palette->id);
 
         $response->assertStatus(200)
@@ -261,13 +263,31 @@ class PaletteTest extends TestCase
         ]);
     }
 
-    public function test_softDeletePalette_invalidID(): void
+    public function test_softDeletePalette_unauthenticated(): void
     {
+        $user = User::factory()->create();
+        $palette = Palette::factory(['user_id' => $user->id])->create();
+        $palette2 = Palette::factory()->create();
+        $this->actingAs($user);
+        $response = $this->deleteJson('api/palettes/delete/'. $palette2->id);
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'message' => 'Unauthorized. You do not have permission to delete this palette.'
+            ]);
+
+    }
+
+    public function test_softDeletePalette_invalidPaletteID(): void
+    {
+        $user = User::factory()->create();
+        $palette = Palette::factory(['user_id' => $user->id])->create();
+        $this->actingAs($user);
         $response = $this->deleteJson('api/palettes/delete/999');
 
-        $response->assertStatus(500)
+        $response->assertStatus(404)
             ->assertJson([
-                'message' => 'error',
+                'message' => 'Palette not found'
             ]);
     }
 
