@@ -79,4 +79,29 @@ class UserController extends Controller
             'message' => 'error',
         ]);
     }
+
+        // LOG IN USER
+        public function loginUser(Request $request)
+        {
+            $credentials = $request->validate([
+                'email' => 'required|email',
+                'password' => 'required|string|min:6',
+            ]);
+    
+            if (Auth::attempt($credentials)) {
+                // Authentication passed
+                $user = Auth::user();
+                $token = $user->createToken('authToken')->accessToken;
+    
+                return response()->json([
+                    'message' => 'Login successful',
+                    'access_token' => $token,
+                ]);
+            }
+    
+            // Authentication failed
+            return response()->json([
+                'message' => 'Login failed',
+            ], 401);
+        }
 }
