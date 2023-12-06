@@ -41,10 +41,9 @@ class PaletteController extends Controller
         ], 422);
     }
 
-    // GET ALL PALETTES
+    //GET ALL PALETTES
     public function getAllPalettes(Request $request)
     {
-
         $request->validate([
             'search' => 'string|max:500',
             'order_by' => 'string|in:most_likes',
@@ -58,7 +57,7 @@ class PaletteController extends Controller
         if ($search) {
             $palettes->where(function ($query) use ($search) {
                 $query->where('name', 'LIKE', '%'.$search.'%')
-                    ->orWhereJsonContains('hex_colors', $search);
+                    ->orWhere('hex_colors', 'LIKE', '%"'.$search.'"%');
             });
         }
 
@@ -93,7 +92,7 @@ class PaletteController extends Controller
         if ($search) {
             $userPalettes->where(function ($query) use ($search) {
                 $query->where('name', 'LIKE', '%'.$search.'%')
-                    ->orWhereJsonContains('hex_colors', $search);
+                    ->orWhere('hex_colors', 'LIKE', '%"'.$search.'"%');
             });
         }
 

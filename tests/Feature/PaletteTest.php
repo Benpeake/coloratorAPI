@@ -43,6 +43,7 @@ class PaletteTest extends TestCase
 
     public function test_getAllPalettes_WithSearch(): void
     {
+
         $palette1 = Palette::factory(['name' => 'palette 1'])->create();
         $palette2 = Palette::factory(['name' => 'palette 2'])->create();
 
