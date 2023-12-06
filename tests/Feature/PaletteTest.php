@@ -269,11 +269,11 @@ class PaletteTest extends TestCase
         $palette = Palette::factory(['user_id' => $user->id])->create();
         $palette2 = Palette::factory()->create();
         $this->actingAs($user);
-        $response = $this->deleteJson('api/palettes/delete/'. $palette2->id);
+        $response = $this->deleteJson('api/palettes/delete/'.$palette2->id);
 
         $response->assertStatus(403)
             ->assertJson([
-                'message' => 'Unauthorized. You do not have permission to delete this palette.'
+                'message' => 'Unauthorized. You do not have permission to delete this palette.',
             ]);
 
     }
@@ -287,7 +287,7 @@ class PaletteTest extends TestCase
 
         $response->assertStatus(404)
             ->assertJson([
-                'message' => 'Palette not found'
+                'message' => 'Palette not found',
             ]);
     }
 

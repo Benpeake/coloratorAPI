@@ -217,7 +217,79 @@ class PaletteController extends Controller
     }
 
     //MAKE PALETTE PRIVATE
+    public function setPaletteToPrivate(Request $request, int $palette_id)
+    {
+        $user = Auth::user();
 
-    //MAKE PALETTE PUBLIC 
+        if (! $user) {
+            return response()->json([
+                'message' => 'Unauthorized. Invalid user.',
+            ], 401);
+        }
+
+        $palette_toEdit = Palette::find($palette_id);
+
+        if ($palette_toEdit->user_id !== $user->id) {
+            return response()->json([
+                'message' => 'Unauthorized. You do not have permission to edit this palette.',
+            ], 403);
+        }
+
+        if ($palette_toEdit->public == 0) {
+            return response()->json([
+                'message' => 'Palette is already private',
+            ], 400);
+        } elseif ($palette_toEdit->public == 1) {
+            $palette_toEdit->public = 0;
+        }
+
+        if ($palette_toEdit->save()) {
+            return response()->json([
+                'message' => "Palette $palette_toEdit->id set to private",
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => 'Error saving palette status',
+        ], 500);
+    }
+
+    //MAKE PALETTE PUBLIC
+    public function setPaletteToPublic(Request $request, int $palette_id)
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'Unauthorized. Invalid user.',
+            ], 401);
+        }
+
+        $palette_toEdit = Palette::find($palette_id);
+
+        if ($palette_toEdit->user_id !== $user->id) {
+            return response()->json([
+                'message' => 'Unauthorized. You do not have permission to edit this palette.',
+            ], 403);
+        }
+
+        if ($palette_toEdit->public == 1) {
+            return response()->json([
+                'message' => 'Palette is already public',
+            ], 400);
+        } elseif ($palette_toEdit->public == 0) {
+            $palette_toEdit->public = 1;
+        }
+
+        if ($palette_toEdit->save()) {
+            return response()->json([
+                'message' => "Palette $palette_toEdit->id set to public",
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => 'Error saving palette status',
+        ], 500);
+    }
 
 }
