@@ -18,19 +18,26 @@ class UserTest extends TestCase
             'email' => 'john.doe@example.com',
             'password' => 'secret123',
         ];
-
+    
         $response = $this->postJson('api/users/register', $userData);
-
+    
         $response->assertStatus(201)
             ->assertJson([
                 'message' => 'User registered successfully',
+                'access_token' => true,
             ]);
-
+    
+        $user = User::where('email', $userData['email'])->first();
+        $this->actingAs($user);
+    
+        $this->assertAuthenticatedAs($user);
+        
         $this->assertDatabaseHas('users', [
             'name' => $userData['name'],
             'email' => $userData['email'],
         ]);
     }
+    
 
     public function test_UpdateUser_validData()
     {

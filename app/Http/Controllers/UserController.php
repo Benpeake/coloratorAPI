@@ -18,7 +18,7 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
         ]);
-
+    
         $existingUser = User::where('email', $request->email)->first();
         
         if ($existingUser) {
@@ -26,23 +26,26 @@ class UserController extends Controller
                 'message' => 'Email address is already registered.',
             ], 422);
         }
-
+    
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
-
+    
         if ($user->wasRecentlyCreated) {
+            $token = $user->createToken('authToken')->plainTextToken;    
             return response()->json([
                 'message' => 'User registered successfully',
+                'access_token' => $token,
             ], 201);
         }
-
+    
         return response()->json([
             'message' => 'User registration failed',
         ], 422);
     }
+    
 
     //UPDATE USER DETAILS
     public function updateUser(Request $request)
