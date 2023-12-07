@@ -38,6 +38,7 @@ class UserController extends Controller
             return response()->json([
                 'message' => 'User registered successfully',
                 'access_token' => $token,
+                'username' => $user->name
             ], 201);
         }
     
@@ -107,6 +108,7 @@ class UserController extends Controller
             return response()->json([
                 'message' => 'Login successful',
                 'access_token' => $token,
+                'username' => $user->name
             ], 200);
         }
 

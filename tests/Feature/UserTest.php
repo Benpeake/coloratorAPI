@@ -25,13 +25,14 @@ class UserTest extends TestCase
             ->assertJson([
                 'message' => 'User registered successfully',
                 'access_token' => true,
+                'username' => $userData['name'],
             ]);
     
         $user = User::where('email', $userData['email'])->first();
         $this->actingAs($user);
     
         $this->assertAuthenticatedAs($user);
-        
+
         $this->assertDatabaseHas('users', [
             'name' => $userData['name'],
             'email' => $userData['email'],
@@ -144,6 +145,7 @@ class UserTest extends TestCase
         ->assertJson([
             'message' => 'Login successful',
             'access_token' => $token,
+            'username' => $user['name'],
         ]);
 
         $this->assertAuthenticatedAs($user);
