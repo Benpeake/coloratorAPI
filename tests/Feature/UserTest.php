@@ -21,9 +21,9 @@ class UserTest extends TestCase
 
         $response = $this->postJson('api/users/register', $userData);
 
-        $response->assertStatus(200)
+        $response->assertStatus(201)
             ->assertJson([
-                'message' => 'User registered successful',
+                'message' => 'User registered successfully',
             ]);
 
         $this->assertDatabaseHas('users', [
@@ -119,4 +119,60 @@ class UserTest extends TestCase
             'id' => $palette->id,
         ]);
     }
+
+    public function test_LoginUser()
+    {
+        $user = User::factory(['password' => 'testpassword'])->create();
+
+        $credentials = [
+            'email' => $user->email,
+            'password' => 'testpassword',
+        ];
+
+        $response = $this->postJson('/api/users/login', $credentials);
+
+        $token = $response['access_token']; 
+
+        $response->assertStatus(200)
+        ->assertJson([
+            'message' => 'Login successful',
+            'access_token' => $token,
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_LoginUser_invalidData()
+    {
+        $user = User::factory(['password' => 'testpassword'])->create();
+
+        $credentials = [
+            'email' => $user->email,
+            'password' => 'testpassworddd',
+        ];
+
+        $response = $this->postJson('/api/users/login', $credentials);
+
+        $response->assertStatus(401);
+        $response->assertJsonStructure([
+            'message',
+        ]);
+    }
+
+    public function test_UserCanLogout()
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user);
+
+        $response = $this->post('/api/users/logout');
+
+        $response->assertStatus(200)
+                 ->assertJson([
+                     'message' => 'Logout successful',
+                 ]);
+
+        $this->assertEquals(0, $user->fresh()->tokens->count());
+    }
+    
 }

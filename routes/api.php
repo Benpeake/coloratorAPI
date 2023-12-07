@@ -9,9 +9,13 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+Route::middleware('auth:sanctum')->group(function () {
+    Route::put('/users/update', [UserController::class, 'updateUser']);
+    Route::delete('/users/delete', [UserController::class, 'softDeleteUser']);
+    Route::post('/users/logout', [UserController::class, 'logoutUser']);
+});
 Route::post('/users/register', [UserController::class, 'registerUser']);
-Route::put('users/update', [UserController::class, 'updateUser'])->middleware('auth:sanctum');
-Route::delete('users/delete', [UserController::class, 'softDeleteUser'])->middleware('auth:sanctum');
+Route::post('/users/login', [UserController::class, 'loginUser']);
 
 //PALETTE ROUTES
 Route::middleware('auth:sanctum')->group(function () {
