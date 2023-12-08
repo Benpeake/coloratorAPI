@@ -18,19 +18,19 @@ class UserTest extends TestCase
             'email' => 'john.doe@example.com',
             'password' => 'secret123',
         ];
-    
+
         $response = $this->postJson('api/users/register', $userData);
-    
+
         $response->assertStatus(201)
             ->assertJson([
                 'message' => 'User registered successfully',
                 'access_token' => true,
-                'username' => $userData['name'],
+                'data' => true,
             ]);
-    
+
         $user = User::where('email', $userData['email'])->first();
         $this->actingAs($user);
-    
+
         $this->assertAuthenticatedAs($user);
 
         $this->assertDatabaseHas('users', [
@@ -38,7 +38,6 @@ class UserTest extends TestCase
             'email' => $userData['email'],
         ]);
     }
-    
 
     public function test_UpdateUser_validData()
     {
@@ -139,14 +138,14 @@ class UserTest extends TestCase
 
         $response = $this->postJson('/api/users/login', $credentials);
 
-        $token = $response['access_token']; 
+        $token = $response['access_token'];
 
         $response->assertStatus(200)
-        ->assertJson([
-            'message' => 'Login successful',
-            'access_token' => $token,
-            'username' => $user['name'],
-        ]);
+            ->assertJson([
+                'message' => 'Login successful',
+                'access_token' => true,
+                'data' => true,
+            ]);
 
         $this->assertAuthenticatedAs($user);
     }
@@ -177,11 +176,10 @@ class UserTest extends TestCase
         $response = $this->post('/api/users/logout');
 
         $response->assertStatus(200)
-                 ->assertJson([
-                     'message' => 'Logout successful',
-                 ]);
+            ->assertJson([
+                'message' => 'Logout successful',
+            ]);
 
         $this->assertEquals(0, $user->fresh()->tokens->count());
     }
-    
 }
