@@ -6,6 +6,7 @@ use App\Models\Palette;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Tests\TestCase;
+use Illuminate\Support\Facades\Hash;
 
 class UserTest extends TestCase
 {
@@ -63,6 +64,126 @@ class UserTest extends TestCase
             'name' => $updatedUserData['name'],
             'email' => $updatedUserData['email'],
         ]);
+    }
+
+    public function test_UpdateUserEmail_validData()
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user);
+
+        $updatedUserData = [
+            'email' => 'updated.email@example.com',
+        ];
+
+        $response = $this->putJson('api/users/update/email', $updatedUserData);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'message' => 'Email update successful',
+                'data' => true,
+            ]);
+
+        $this->assertDatabaseHas('users', [
+            'email' => $updatedUserData['email'],
+        ]);
+    }
+
+    public function test_UpdateUserName_validData()
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user);
+
+        $updatedUserData = [
+            'name' => 'Updated Name',
+        ];
+
+        $response = $this->putJson('api/users/update/name', $updatedUserData);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'message' => 'Username update successful',
+                'data' => true
+            ]);
+
+        $this->assertDatabaseHas('users', [
+            'name' => $updatedUserData['name'],
+        ]);
+    }
+
+    public function test_changePassword_valid()
+    {
+        $user = User::factory()->create([
+            'password' => Hash::make('old_password'),
+        ]);
+
+        $this->actingAs($user);
+
+        $newPasswordData = [
+            'old_password' => 'old_password',
+            'new_password' => 'new_password',
+            'confirm_password' => 'new_password',
+        ];
+
+        $response = $this->putJson('api/users/update/password', $newPasswordData);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'message' => 'Password updated successfully',
+            ]);
+
+        $user->refresh();
+
+        $this->assertTrue(Hash::check('new_password', $user->password));
+    }
+
+    public function test_changePassword_newPassowrdsDoNotMatch()
+    {
+        $user = User::factory()->create([
+            'password' => Hash::make('old_password'),
+        ]);
+
+        $this->actingAs($user);
+
+        $newPasswordData = [
+            'old_password' => 'old_password',
+            'new_password' => 'new_password',
+            'confirm_password' => 'new_password123',
+        ];
+
+        $response = $this->putJson('api/users/update/password', $newPasswordData);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'message' => 'New passwords do not match',
+            ]);
+    }
+
+    public function test_changePassword_invalid()
+    {
+        $user = User::factory()->create([
+            'password' => Hash::make('old_password'),
+        ]);
+
+        $this->actingAs($user);
+
+        $newPasswordData = [
+            'old_password' => 'incorrect_old_password',
+            'new_password' => 'new_password',
+            'confirm_password' => 'new_password',
+        ];
+
+        $response = $this->putJson('api/users/update/password', $newPasswordData);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'message' => 'Incorrect old password',
+            ]);
+
+        $user->refresh();
+
+        $this->assertTrue(Hash::check('old_password', $user->password));
     }
 
     public function test_UpdateUser_InvalidData()

@@ -12,11 +12,11 @@ class PaletteTest extends TestCase
 {
     use DatabaseMigrations;
 
-    public function test_getAllPalettes(): void
+    public function test_getAllPublicPalettes(): void
     {
-        Palette::factory()->create();
+        Palette::factory(['public' => true])->create();
         $response = $this->getJson('/api/palettes/all');
-
+    
         $response->assertStatus(200)
             ->assertJson(function (AssertableJson $json) {
                 $json->hasAll(['data', 'message'])
@@ -36,19 +36,19 @@ class PaletteTest extends TestCase
                                 'public' => ['boolean', 'integer'],
                                 'likes' => 'integer',
                                 'user_id' => 'integer',
-                            ]);
+                            ])
+                            ->where('public', 1);
                     });
             });
     }
-
-    public function test_getAllPalettes_WithSearch(): void
+    
+    public function test_getAllPublicPalettes_WithSearch(): void
     {
-
-        $palette1 = Palette::factory(['name' => 'palette 1'])->create();
-        $palette2 = Palette::factory(['name' => 'palette 2'])->create();
-
+        $palette1 = Palette::factory(['name' => 'palette 1', 'public' => true])->create();
+        $palette2 = Palette::factory(['name' => 'palette 2', 'public' => true])->create();
+    
         $response = $this->getJson('/api/palettes/all?search='.$palette1->name);
-
+    
         $response->assertStatus(200)
             ->assertJson(function (AssertableJson $json) {
                 $json->hasAll(['data', 'message'])
@@ -68,19 +68,20 @@ class PaletteTest extends TestCase
                                 'public' => ['boolean', 'integer'],
                                 'likes' => 'integer',
                                 'user_id' => 'integer',
-                            ]);
+                            ])
+                            ->where('public', 1); 
                     });
             });
     }
-
-    public function test_getAllPalettes_sortByLikes(): void
+    
+    public function test_getAllPublicPalettes_SortByLikes(): void
     {
-        Palette::factory(['name' => 'palette 1', 'likes' => 1])->create();
-        Palette::factory(['name' => 'palette 2', 'likes' => 2])->create();
-        Palette::factory(['name' => 'palette 3', 'likes' => 3])->create();
-
+        Palette::factory(['name' => 'palette 1', 'likes' => 1, 'public' => true])->create();
+        Palette::factory(['name' => 'palette 2', 'likes' => 2, 'public' => true])->create();
+        Palette::factory(['name' => 'palette 3', 'likes' => 3, 'public' => true])->create();
+    
         $response = $this->getJson('/api/palettes/all?order_by=most_likes');
-
+    
         $response->assertStatus(200)
             ->assertJson(function (AssertableJson $json) use ($response) {
                 $json->hasAll(['data', 'message'])
@@ -100,13 +101,15 @@ class PaletteTest extends TestCase
                                 'public' => ['boolean', 'integer'],
                                 'likes' => 'integer',
                                 'user_id' => 'integer',
-                            ]);
+                            ])
+                            ->where('public', 1); 
                     });
-
+    
                 $paletteData = $response->json('data');
                 $this->assertTrue($paletteData[0]['likes'] >= $paletteData[1]['likes']);
             });
     }
+    
 
     public function test_getAllUsersPalettes_success(): void
     {
@@ -205,7 +208,7 @@ class PaletteTest extends TestCase
         $user = User::factory()->create();
         $token = $user->createToken('test-token')->plainTextToken;
 
-        $response = $this->postJson('/api/palettes/', [
+        $response = $this->postJson('/api/palettes/add/', [
             'name' => 'palette',
             'hex_colors' => ['#C2DB3C', '#461ABD'],
             'user_id' => $user->id,
@@ -232,7 +235,7 @@ class PaletteTest extends TestCase
         $user = User::factory()->create();
         $token = $user->createToken('test-token')->plainTextToken;
 
-        $response = $this->postJson('/api/palettes/', [
+        $response = $this->postJson('/api/palettes/add/', [
             'name' => 'palette with name longer than fourteen characters',
             'hex_colors' => [1],
             'user_id' => $user->id,

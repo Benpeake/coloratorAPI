@@ -91,6 +91,7 @@ class UserController extends Controller
         if ($updated) {
             return response()->json([
                 'message' => 'Username update successful',
+                'data' => $user
             ], 200);
         }
 
@@ -114,7 +115,7 @@ class UserController extends Controller
 
         if ($existingUser) {
             return response()->json([
-                'message' => 'Email already in use',
+                'message' => 'Email is already in use',
             ], 422);
         }
 
@@ -125,6 +126,7 @@ class UserController extends Controller
         if ($updated) {
             return response()->json([
                 'message' => 'Email update successful',
+                'data' => $user
             ], 200);
         }
 
@@ -136,6 +138,13 @@ class UserController extends Controller
     //update password
     public function changePassword(Request $request)
     {
+
+        if ($request->new_password !== $request->confirm_password) {
+            return response()->json([
+                'message' => 'New passwords do not match',
+            ], 422);
+        }
+
         $user = Auth::user();
 
         $request->validate([
@@ -150,6 +159,7 @@ class UserController extends Controller
             ], 422);
         }
 
+
         $user->update([
             'password' => Hash::make($request->new_password),
         ]);
@@ -163,16 +173,17 @@ class UserController extends Controller
     public function softDeleteUser(Request $request)
     {
         $user = Auth::user();
-
-        $user->palettes()->delete();
+    
         if ($user->delete()) {
+            $user->tokens()->delete();
+            $user->palettes()->delete();
+    
             return response()->json([
                 'message' => 'User deleted successfully',
             ], 200);
         }
-
         return response()->json([
-            'message' => 'error',
+            'message' => 'Error deleting user',
         ], 500);
     }
 

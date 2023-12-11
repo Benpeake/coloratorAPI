@@ -13,7 +13,7 @@ class PaletteController extends Controller
     public function addPalette(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:14',
+            'name' => 'required|string|min:1|max:14',
             'hex_colors' => ['required', 'array', 'between:2,5'],
             'public' => 'sometimes|boolean',
             'user_id' => 'required|integer|exists:users,id',
@@ -41,39 +41,39 @@ class PaletteController extends Controller
         ], 422);
     }
 
-    //GET ALL PALETTES
-    public function getAllPalettes(Request $request)
+    public function getAllPublicPalettes(Request $request)
     {
         $request->validate([
             'search' => 'string|max:500',
             'order_by' => 'string|in:most_likes',
         ]);
-
+    
         $search = $request->search;
         $orderBy = $request->order_by;
-
-        $palettes = Palette::query();
-
+    
+        $palettes = Palette::query()->where('public', true);
+    
         if ($search) {
             $palettes->where(function ($query) use ($search) {
-                $query->where('name', 'LIKE', '%'.$search.'%')
+                $query->where('name', 'LIKE', '%' . $search . '%')
                     ->orWhere('hex_colors', 'LIKE', '%"'.$search.'"%');
             });
         }
-
+    
         if ($orderBy === 'most_likes') {
             $palettes->orderBy('likes', 'desc');
         } else {
             $palettes->latest();
         }
-
+    
         $palettes = $palettes->get();
-
+    
         return response()->json([
             'data' => $palettes,
-            'message' => 'Palettes successfully retrieved',
+            'message' => 'Public palettes successfully retrieved',
         ], 200);
     }
+    
 
     //GET A SINGLE USERS PALETTES
     public function getAllPalettesByAuthUser(Request $request)
