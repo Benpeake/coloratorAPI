@@ -24,6 +24,7 @@ Route::post('/users/login', [UserController::class, 'loginUser']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/palettes/add', [PaletteController::class, 'addPalette']);
     Route::put('/palettes/like/{palette_id}', [PaletteController::class, 'addLikeToPalette']);
+    Route::delete('/palettes/like/{palette_id}', [PaletteController::class, 'removeLikeFromPalette']);
     Route::get('/palettes', [PaletteController::class, 'getAllPalettesByAuthUser']);
     Route::get('/palettes/liked', [PaletteController::class, 'getLikedPalettes']);
     Route::delete('/palettes/delete/{palette_id}', [PaletteController::class, 'softDeletePalette']);

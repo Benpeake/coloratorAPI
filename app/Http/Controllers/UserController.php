@@ -33,11 +33,15 @@ class UserController extends Controller
         ]);
 
         if ($user->wasRecentlyCreated) {
+            $likedPalettes = $user->likedPalettes()->latest()->get();
             $token = $user->createToken('authToken')->plainTextToken;
 
             return response()->json([
                 'message' => 'User registered successfully',
-                'data' => $user,
+                'data' => [
+                    'user' => $user,
+                    'liked_palettes' => $likedPalettes,
+                ],
                 'access_token' => $token,
             ], 201);
         }
@@ -91,7 +95,7 @@ class UserController extends Controller
         if ($updated) {
             return response()->json([
                 'message' => 'Username update successful',
-                'data' => $user
+                'data' => $user,
             ], 200);
         }
 
@@ -126,7 +130,7 @@ class UserController extends Controller
         if ($updated) {
             return response()->json([
                 'message' => 'Email update successful',
-                'data' => $user
+                'data' => $user,
             ], 200);
         }
 
@@ -159,7 +163,6 @@ class UserController extends Controller
             ], 422);
         }
 
-
         $user->update([
             'password' => Hash::make($request->new_password),
         ]);
@@ -173,15 +176,16 @@ class UserController extends Controller
     public function softDeleteUser(Request $request)
     {
         $user = Auth::user();
-    
+
         if ($user->delete()) {
             $user->tokens()->delete();
             $user->palettes()->delete();
-    
+
             return response()->json([
                 'message' => 'User deleted successfully',
             ], 200);
         }
+
         return response()->json([
             'message' => 'Error deleting user',
         ], 500);
@@ -197,11 +201,15 @@ class UserController extends Controller
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
+            $likedPalettes = $user->likedPalettes()->latest()->get();
             $token = $user->createToken('authToken')->plainTextToken;
 
             return response()->json([
                 'message' => 'Login successful',
-                'data' => $user,
+                'data' => [
+                    'user' => $user,
+                    'liked_palettes' => $likedPalettes,
+                ],
                 'access_token' => $token,
             ], 200);
         }

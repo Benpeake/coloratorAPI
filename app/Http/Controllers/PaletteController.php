@@ -41,39 +41,39 @@ class PaletteController extends Controller
         ], 422);
     }
 
+    //GET ALL PUBLIC PALETTES
     public function getAllPublicPalettes(Request $request)
     {
         $request->validate([
             'search' => 'string|max:500',
-            'order_by' => 'string|in:most_likes',
+            'order_by' => 'string|in:newest,most_likes',
         ]);
-    
+
         $search = $request->search;
         $orderBy = $request->order_by;
-    
+
         $palettes = Palette::query()->where('public', true);
-    
+
         if ($search) {
             $palettes->where(function ($query) use ($search) {
-                $query->where('name', 'LIKE', '%' . $search . '%')
+                $query->where('name', 'LIKE', '%'.$search.'%')
                     ->orWhere('hex_colors', 'LIKE', '%"'.$search.'"%');
             });
         }
-    
+
         if ($orderBy === 'most_likes') {
             $palettes->orderBy('likes', 'desc');
         } else {
             $palettes->latest();
         }
-    
+
         $palettes = $palettes->get();
-    
+
         return response()->json([
             'data' => $palettes,
             'message' => 'Public palettes successfully retrieved',
         ], 200);
     }
-    
 
     //GET A SINGLE USERS PALETTES
     public function getAllPalettesByAuthUser(Request $request)
@@ -175,7 +175,49 @@ class PaletteController extends Controller
         }
 
         return response()->json([
-            'message' => 'You have already liked this palette',
+            'message' => 'Palette already liked',
+        ], 409);
+    }
+
+    // REMOVE LIKE FROM PALETTE
+    public function removeLikeFromPalette(Request $request, int $palette_id)
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'Unauthorized. Invalid user.',
+            ], 401);
+        }
+
+        $hasLiked = $user->likedPalettes()->where('palette_id', $palette_id)->exists();
+
+        if ($hasLiked) {
+            $palette_toEdit = Palette::find($palette_id);
+
+            if ($palette_toEdit) {
+                $palette_toEdit->likes--;
+
+                if ($palette_toEdit->save()) {
+                    $user->likedPalettes()->detach($palette_id);
+
+                    return response()->json([
+                        'message' => 'Palette successfully updated (like removed)',
+                    ], 200);
+                }
+
+                return response()->json([
+                    'message' => 'Palette update not successful',
+                ], 422);
+            }
+
+            return response()->json([
+                'message' => 'Invalid palette ID',
+            ], 401);
+        }
+
+        return response()->json([
+            'message' => 'Palette not liked by the user',
         ], 409);
     }
 
@@ -206,7 +248,7 @@ class PaletteController extends Controller
 
         if ($paletteToDelete->delete()) {
             return response()->json([
-                'message' => "Palette $palette_id removed",
+                'message' => 'Palette removed',
             ], 200);
         }
 
@@ -244,7 +286,7 @@ class PaletteController extends Controller
 
         if ($palette_toEdit->save()) {
             return response()->json([
-                'message' => "Palette $palette_toEdit->id set to private",
+                'message' => 'Palette set to private',
             ], 200);
         }
 
@@ -282,7 +324,7 @@ class PaletteController extends Controller
 
         if ($palette_toEdit->save()) {
             return response()->json([
-                'message' => "Palette $palette_toEdit->id set to public",
+                'message' => 'Palette set to public',
             ], 200);
         }
 

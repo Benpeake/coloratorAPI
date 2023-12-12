@@ -16,7 +16,7 @@ class PaletteTest extends TestCase
     {
         Palette::factory(['public' => true])->create();
         $response = $this->getJson('/api/palettes/all');
-    
+
         $response->assertStatus(200)
             ->assertJson(function (AssertableJson $json) {
                 $json->hasAll(['data', 'message'])
@@ -41,14 +41,14 @@ class PaletteTest extends TestCase
                     });
             });
     }
-    
+
     public function test_getAllPublicPalettes_WithSearch(): void
     {
         $palette1 = Palette::factory(['name' => 'palette 1', 'public' => true])->create();
         $palette2 = Palette::factory(['name' => 'palette 2', 'public' => true])->create();
-    
+
         $response = $this->getJson('/api/palettes/all?search='.$palette1->name);
-    
+
         $response->assertStatus(200)
             ->assertJson(function (AssertableJson $json) {
                 $json->hasAll(['data', 'message'])
@@ -69,19 +69,19 @@ class PaletteTest extends TestCase
                                 'likes' => 'integer',
                                 'user_id' => 'integer',
                             ])
-                            ->where('public', 1); 
+                            ->where('public', 1);
                     });
             });
     }
-    
+
     public function test_getAllPublicPalettes_SortByLikes(): void
     {
         Palette::factory(['name' => 'palette 1', 'likes' => 1, 'public' => true])->create();
         Palette::factory(['name' => 'palette 2', 'likes' => 2, 'public' => true])->create();
         Palette::factory(['name' => 'palette 3', 'likes' => 3, 'public' => true])->create();
-    
+
         $response = $this->getJson('/api/palettes/all?order_by=most_likes');
-    
+
         $response->assertStatus(200)
             ->assertJson(function (AssertableJson $json) use ($response) {
                 $json->hasAll(['data', 'message'])
@@ -102,14 +102,13 @@ class PaletteTest extends TestCase
                                 'likes' => 'integer',
                                 'user_id' => 'integer',
                             ])
-                            ->where('public', 1); 
+                            ->where('public', 1);
                     });
-    
+
                 $paletteData = $response->json('data');
                 $this->assertTrue($paletteData[0]['likes'] >= $paletteData[1]['likes']);
             });
     }
-    
 
     public function test_getAllUsersPalettes_success(): void
     {
@@ -259,7 +258,7 @@ class PaletteTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
-                'message' => 'Palette '.$palette->id.' removed',
+                'message' => 'Palette removed',
             ]);
 
         $this->assertSoftDeleted('palettes', [
@@ -295,7 +294,7 @@ class PaletteTest extends TestCase
             ]);
     }
 
-    public function testAddLikeToPalette()
+    public function test_AddLikeToPalette()
     {
         $user = User::factory()->create();
         $palette = Palette::factory()->create(['likes' => 0]);
@@ -311,7 +310,7 @@ class PaletteTest extends TestCase
         $this->assertTrue($user->likedPalettes->contains($palette));
     }
 
-    public function testAddLikeToPalette_alreadyLiked()
+    public function test_AddLikeToPalette_alreadyLiked()
     {
         $user = User::factory()->create();
         $palette = Palette::factory()->create(['likes' => 1]);
@@ -322,11 +321,35 @@ class PaletteTest extends TestCase
 
         $response->assertStatus(409)
             ->assertJson([
-                'message' => 'You have already liked this palette',
+                'message' => 'Palette already liked',
             ]);
 
         $this->assertEquals(1, $palette->fresh()->likes);
         $this->assertTrue($user->likedPalettes->contains($palette));
+    }
+
+    public function test_RemoveLikeFromPalette()
+    {
+        $user = User::factory()->create();
+        $palette = Palette::factory()->create(['likes' => 1]);
+        $user->likedPalettes()->attach($palette->id);
+        $this->actingAs($user);
+        $hasLikedBefore = $user->likedPalettes()->where('palette_id', $palette->id)->exists();
+
+        if ($hasLikedBefore) {
+            $response = $this->delete("api/palettes/like/{$palette->id}");
+
+            $response->assertStatus(200)
+                ->assertJson([
+                    'message' => 'Palette successfully updated (like removed)',
+                ]);
+
+            $this->assertEquals(0, $palette->fresh()->likes);
+
+            $this->assertFalse($user->likedPalettes()->where('palette_id', $palette->id)->exists());
+        } else {
+            $this->assertTrue(true, 'User has not liked the palette before.');
+        }
     }
 
     public function test_SetPaletteToPrivate()
@@ -340,7 +363,7 @@ class PaletteTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
-                'message' => "Palette $palette->id set to private",
+                'message' => 'Palette set to private',
             ]);
 
         $this->assertDatabaseHas('palettes', [
@@ -400,7 +423,7 @@ class PaletteTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
-                'message' => "Palette $palette->id set to public",
+                'message' => 'Palette set to public',
             ]);
 
         $this->assertDatabaseHas('palettes', [

@@ -5,8 +5,8 @@ namespace Tests\Feature;
 use App\Models\Palette;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
-use Tests\TestCase;
 use Illuminate\Support\Facades\Hash;
+use Tests\TestCase;
 
 class UserTest extends TestCase
 {
@@ -104,7 +104,7 @@ class UserTest extends TestCase
         $response->assertStatus(200)
             ->assertJson([
                 'message' => 'Username update successful',
-                'data' => true
+                'data' => true,
             ]);
 
         $this->assertDatabaseHas('users', [
